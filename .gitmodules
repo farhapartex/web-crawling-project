@@ -1,0 +1,6 @@
+[submodule "backend"]
+	path = backend
+	url = git@github.com:farhapartex/web-crawling-backend.git
+[submodule "scraping_service"]
+	path = scraping_service
+	url = git@github.com:farhapartex/web-crawler-scrapping-service.git
