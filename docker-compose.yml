@@ -37,6 +37,7 @@ services:
       context: .
       dockerfile: ./scraping_service/Dockerfile
     container_name: book_scraping_service
+    restart: always
     depends_on:
       - mongodb
       - redis
@@ -55,6 +56,7 @@ services:
       context: .
       dockerfile: ./scraping_service/Dockerfile
     container_name: book_scraping_worker
+    restart: always
     depends_on:
       - mongodb
       - redis
