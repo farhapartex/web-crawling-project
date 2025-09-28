@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:8.0.14
+    restart: always
+    container_name: book_scraping_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: book_scraping
+      MONGO_INITDB_ROOT_USERNAME: hasan08sust
+      MONGO_INITDB_ROOT_PASSWORD: F%b%94GJQMQbDM)G
+
+  redis:
+    image: redis:8.2.1-alpine
+    container_name: book_scraping_redis
+    ports:
+      - "6379:6379"
+
+  scraping_service:
+    build:
+      context: .
+      dockerfile: ./scraping_service/Dockerfile
+    container_name: book_scraping_service
+    depends_on:
+      - mongodb
+      - redis
+    environment:
+      - MONGODB_URL=mongodb://hasan08sust:F%25b%2594GJQMQbDM%29G@mongodb:27017/book_scraping?authSource=admin
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - ./logs:/app/logs
+    command: python main.py start
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: ./scraping_service/Dockerfile
+    container_name: book_scraping_worker
+    depends_on:
+      - mongodb
+      - redis
+    environment:
+      - MONGODB_URL=mongodb://hasan08sust:F%25b%2594GJQMQbDM%29G@mongodb:27017/book_scraping?authSource=admin
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - ./logs:/app/logs
+    command: python main.py worker
+
+volumes:
+  mongodb_data:
