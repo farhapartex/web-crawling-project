@@ -20,6 +20,18 @@ services:
     ports:
       - "6379:6379"
 
+  rabbitmq:
+    image: rabbitmq:4.1.4
+    container_name: book_scraping_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: password123
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
   scraping_service:
     build:
       context: .
@@ -28,14 +40,15 @@ services:
     depends_on:
       - mongodb
       - redis
+      - rabbitmq
     environment:
       - MONGODB_URL=mongodb://hasan08sust:F%25b%2594GJQMQbDM%29G@mongodb:27017/book_scraping?authSource=admin
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - RABBITMQ_URL=amqp://admin:password123@rabbitmq:5672/
     volumes:
       - ./logs:/app/logs
-    command: python main.py start
 
   celery_worker:
     build:
@@ -45,14 +58,33 @@ services:
     depends_on:
       - mongodb
       - redis
+      - rabbitmq
     environment:
       - MONGODB_URL=mongodb://hasan08sust:F%25b%2594GJQMQbDM%29G@mongodb:27017/book_scraping?authSource=admin
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - RABBITMQ_URL=amqp://admin:password123@rabbitmq:5672/
     volumes:
       - ./logs:/app/logs
     command: python main.py worker
 
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: book_scraping_backend
+    depends_on:
+      - mongodb
+    environment:
+      - MONGODB_URL=mongodb://hasan08sust:F%25b%2594GJQMQbDM%29G@mongodb:27017/book_scraping?authSource=admin
+      - MONGODB_DB_NAME=book_scraping
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    restart: unless-stopped
+
 volumes:
   mongodb_data:
+  rabbitmq_data:
